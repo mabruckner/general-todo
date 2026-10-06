@@ -1,0 +1,4 @@
+# an example Rocket.toml file
+
+[default.databases.todo_database]
+url = "postgres://user:password@host/database"
