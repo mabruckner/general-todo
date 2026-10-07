@@ -1,26 +1,12 @@
 use rocket::{data, fairing::AdHoc, http::{Cookie, CookieJar}, serde::{Deserialize, Serialize, json::Json}};
+use todo_shared::*;
 
 use crate::db::{TodoData};
 
 pub fn api_adhoc() -> AdHoc {
     AdHoc::on_ignite("api", |rocket| async move {
-        rocket.mount("api", routes![login, register, logout, current_user])
+        rocket.mount("/api", routes![login, register, logout, current_user])
     })
-}
-
-#[derive(Serialize, Deserialize)]
-enum CurrentUserResponse {
-    LoggedOut,
-    User {
-        name: String,
-        id: i32
-    }
-
-}
-#[derive(Serialize, Deserialize)]
-struct Credentials {
-    pub username: String,
-    pub password: String
 }
 #[post("/login", data="<user_info>")]
 async fn login(cookies: &CookieJar<'_>, user_info: Json<Credentials>, database: &TodoData) -> Json<CurrentUserResponse> {

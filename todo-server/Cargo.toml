@@ -8,6 +8,7 @@ rocket = { version = "0.5.1", features = ["secrets", "json"] }
 serde = "*"
 argon2 = "0.6.0"
 sqlx = "0.7.0"
+todo-shared = { path = "../todo-shared" }
 
 [dependencies.rocket_db_pools]
 version = "0.2.0"

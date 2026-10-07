@@ -2345,6 +2345,14 @@ dependencies = [
  "rocket_db_pools",
  "serde",
  "sqlx",
+ "todo-shared",
+]
+
+[[package]]
+name = "todo-shared"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
