@@ -107,12 +107,51 @@ fn LogIn(props: &LoginProps) -> Html {
     }
 }
 
+#[component]
+fn TaskAdd() -> Html {
+    html! {
+        <form class="row g-2">
+            <div class="col-auto">
+                <input type="text" class="form-control" placeholder="task content"/>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary mb-3">{"ADD"}</button>
+            </div>
+        </form>
+    }
+}
+
+#[component]
+fn TaskView() -> Html {
+    html! {
+        <div class="container-md">
+            <div class="card">
+                <TaskAdd />
+            </div>
+        </div>
+    }
+
+}
+
 fn set_origin(relative_url: &str) -> String {
     let origin = web_sys::window().unwrap().location().origin().unwrap();
     format!("{}{}", origin, relative_url).into()
 
 }
 
+pub async fn add_task(contents: String) -> reqwest::Result<Task> {
+    reqwest::Client::new()
+        .post(set_origin("/api/tasks"))
+        .json(&contents)
+        .send().await?
+        .json().await
+}
+pub async fn get_all_tasks() -> reqwest::Result<Vec<Task>> {
+    reqwest::Client::new()
+        .get(set_origin("/api/tasks"))
+        .send().await?
+        .json().await
+}
 pub async fn get_current_user() -> reqwest::Result<CurrentUserResponse> {
     reqwest::get(set_origin("/api/user")).await?
         .json().await
@@ -141,11 +180,22 @@ fn App() -> Html {
             user_handle.set(user);
         })
     };
+    {
+        let user_changed = user_changed.clone();
+        use_state(|| {
+            spawn_local(async move {
+                    let res = get_current_user().await;
+                    if let Ok(user) = res {
+                        user_changed.emit(user);
+                    };
+                })
+        });
+    }
     html! {
         <div>
             if let CurrentUserResponse::User { name, id } = (*user_handle).clone() {
                 <TopBar logged_in=true />
-                <h5>{ name }</h5>
+                <TaskView />
             } else {
                 <TopBar logged_in=false />
                 <LogIn on_user_change={user_changed}/>
