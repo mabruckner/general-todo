@@ -12,6 +12,24 @@ pub struct User {
     pub pass_hash: String,
 }
 
+#[derive(sqlx::FromRow, Debug, PartialEq, Eq)]
+pub struct Task {
+    pub id: i32,
+    pub user_id: i32,
+    pub contents: String,
+    pub complete: bool
+}
+
+impl From<Task> for todo_shared::Task {
+    fn from(value: Task) -> Self {
+        todo_shared::Task {
+            id: value.id,
+            contents: value.contents,
+            complete: value.complete
+        }
+    }
+}
+
 /// password hashing info from https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 pub fn hash_password(pass: &str) -> Option<String> {
 
@@ -46,7 +64,6 @@ impl TodoData {
 
     pub async fn add_user(&self, name: &str, password: &str) -> Result<User, sqlx::Error> {
         let pass_hash = hash_password(password).unwrap();
-        println!("{:?}", pass_hash);
         sqlx::query_as("INSERT INTO users (username, pass_hash) VALUES ($1, $2) RETURNING *")
             .bind(name)
             .bind(pass_hash)
@@ -55,6 +72,19 @@ impl TodoData {
 
     pub async fn all_users(&self) -> Result<Vec<User>, sqlx::Error> {
         sqlx::query_as("SELECT * FROM users")
+            .fetch_all(&self.0).await
+    }
+
+    pub async fn add_task(&self, uid: i32, contents: String) -> Result<Task, sqlx::Error> {
+        sqlx::query_as("INSERT INTO tasks (user_id, contents, complete) VALUES ($1, $2, false) RETURNING *")
+            .bind(uid)
+            .bind(contents)
+            .fetch_one(&self.0).await
+    }
+
+    pub async fn get_all_tasks(&self, uid: i32) -> Result<Vec<Task>, sqlx::Error> {
+        sqlx::query_as("SELECT * FROM tasks WHERE user_id = $1")
+            .bind(uid)
             .fetch_all(&self.0).await
     }
 
