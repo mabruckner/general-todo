@@ -13,6 +13,22 @@ pub async fn add_task(contents: String) -> reqwest::Result<Task> {
         .send().await?
         .json().await
 }
+pub async fn remove_task(id: i32) -> reqwest::Result<Task> {
+    reqwest::Client::new()
+        .delete(set_origin(&format!("/api/tasks/{}", id)))
+        .send().await?
+        .json().await
+}
+pub async fn update_task(task: Task) -> reqwest::Result<Task> {
+    reqwest::Client::new()
+        .put(set_origin(&format!("/api/tasks/{}", task.id)))
+        .json(&TaskValues {
+            contents: task.contents,
+            completed: task.completed
+        })
+        .send().await?
+        .json().await
+}
 pub async fn get_all_tasks() -> reqwest::Result<Vec<Task>> {
     reqwest::Client::new()
         .get(set_origin("/api/tasks"))

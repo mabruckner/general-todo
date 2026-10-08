@@ -22,3 +22,9 @@ pub struct Task {
     pub contents: String,
     pub completed: bool
 }
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct TaskValues {
+    pub contents: String,
+    pub completed: bool,
+}

@@ -1,3 +1,5 @@
+use core::task;
+
 use rocket::{Request, data, fairing::AdHoc, http::{Cookie, CookieJar, Status, StatusClass::Success}, outcome::Outcome, request::{self, FromRequest}, response::status::BadRequest, serde::{Deserialize, Serialize, json::Json}};
 use todo_shared::*;
 
@@ -33,7 +35,7 @@ impl<'r> FromRequest<'r> for HasUser {
 
 pub fn api_adhoc() -> AdHoc {
     AdHoc::on_ignite("api", |rocket| async move {
-        rocket.mount("/api", routes![login, register, logout, current_user, get_all_tasks, add_task])
+        rocket.mount("/api", routes![login, register, logout, current_user, get_all_tasks, add_task, delete_task, update_task])
     })
 }
 #[post("/login", data="<user_info>")]
@@ -87,5 +89,17 @@ async fn get_all_tasks(user: HasUser, database: &TodoData) -> Result<Json<Vec<Ta
 async fn add_task(user: HasUser, database: &TodoData, task_contents: Json<String>) -> Result<Json<Task>, ()> {
     let res = database.add_task(user.0.id, task_contents.0.clone()).await;
     println!("{:?}", res);
+    Ok(Json(res.map_err(|_|())?.into()))
+}
+
+#[delete("/tasks/<task_id>")]
+async fn delete_task(user: HasUser, database: &TodoData, task_id: i32) -> Result<Json<Task>, ()> {
+    let res = database.remove_task(user.0.id, task_id).await;
+    Ok(Json(res.map_err(|_|())?.into()))
+}
+
+#[put("/tasks/<task_id>", data="<task>")]
+async fn update_task(user: HasUser, database: &TodoData, task_id: i32, task: Json<TaskValues>) -> Result<Json<Task>, ()> {
+    let res = database.update_task(user.0.id, task_id, task.contents.clone(), task.completed).await;
     Ok(Json(res.map_err(|_|())?.into()))
 }

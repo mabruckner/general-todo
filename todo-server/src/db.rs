@@ -1,4 +1,5 @@
 use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version};
+use rocket::figment::error::Actual::Unsigned;
 use rocket_db_pools::{sqlx, Database};
 
 #[derive(Database)]
@@ -79,6 +80,20 @@ impl TodoData {
         sqlx::query_as("INSERT INTO tasks (user_id, contents, completed) VALUES ($1, $2, false) RETURNING *")
             .bind(uid)
             .bind(contents)
+            .fetch_one(&self.0).await
+    }
+    pub async fn remove_task(&self, uid: i32, id: i32) -> Result<Task, sqlx::Error> {
+        sqlx::query_as("DELETE FROM tasks WHERE user_id = $1 AND id = $2 RETURNING *")
+            .bind(uid)
+            .bind(id)
+            .fetch_one(&self.0).await
+    }
+    pub async fn update_task(&self, uid: i32, id: i32, contents: String, completed: bool) -> Result<Task, sqlx::Error> {
+        sqlx::query_as("UPDATE tasks SET contents = $1, completed = $2 WHERE user_id = $3 AND id = $4 RETURNING *")
+            .bind(contents)
+            .bind(completed)
+            .bind(uid)
+            .bind(id)
             .fetch_one(&self.0).await
     }
 
