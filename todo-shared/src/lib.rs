@@ -20,5 +20,5 @@ pub struct Credentials {
 pub struct Task {
     pub id: i32,
     pub contents: String,
-    pub complete: bool
+    pub completed: bool
 }

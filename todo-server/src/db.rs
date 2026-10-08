@@ -17,7 +17,7 @@ pub struct Task {
     pub id: i32,
     pub user_id: i32,
     pub contents: String,
-    pub complete: bool
+    pub completed: bool
 }
 
 impl From<Task> for todo_shared::Task {
@@ -25,7 +25,7 @@ impl From<Task> for todo_shared::Task {
         todo_shared::Task {
             id: value.id,
             contents: value.contents,
-            complete: value.complete
+            completed: value.completed
         }
     }
 }
@@ -76,7 +76,7 @@ impl TodoData {
     }
 
     pub async fn add_task(&self, uid: i32, contents: String) -> Result<Task, sqlx::Error> {
-        sqlx::query_as("INSERT INTO tasks (user_id, contents, complete) VALUES ($1, $2, false) RETURNING *")
+        sqlx::query_as("INSERT INTO tasks (user_id, contents, completed) VALUES ($1, $2, false) RETURNING *")
             .bind(uid)
             .bind(contents)
             .fetch_one(&self.0).await

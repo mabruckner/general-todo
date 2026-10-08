@@ -3,6 +3,15 @@ use todo_shared::*;
 use reqwest;
 use web_sys::{self, HtmlInputElement, wasm_bindgen::JsCast};
 
+mod requests;
+use requests::*;
+
+mod util;
+use util::*;
+
+mod tasks;
+use tasks::*;
+
 
 #[derive(Properties, PartialEq)]
 pub struct NavProps {
@@ -23,14 +32,6 @@ fn TopBar(&NavProps { logged_in }: &NavProps) -> Html {
             </div>
         </nav>
     }
-}
-
-// this will cause problems if it isn't used on an input type="text"
-fn textinput_callback(handle: UseStateHandle<String>) -> Callback<Event> {
-    Callback::from(move |e: Event| {
-        let target: HtmlInputElement = e.target().unwrap().unchecked_into();
-        handle.set(target.value());
-    })
 }
 
 #[derive(Properties, PartialEq)]
@@ -107,69 +108,6 @@ fn LogIn(props: &LoginProps) -> Html {
     }
 }
 
-#[component]
-fn TaskAdd() -> Html {
-    html! {
-        <form class="row g-2">
-            <div class="col-auto">
-                <input type="text" class="form-control" placeholder="task content"/>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary mb-3">{"ADD"}</button>
-            </div>
-        </form>
-    }
-}
-
-#[component]
-fn TaskView() -> Html {
-    html! {
-        <div class="container-md">
-            <div class="card">
-                <TaskAdd />
-            </div>
-        </div>
-    }
-
-}
-
-fn set_origin(relative_url: &str) -> String {
-    let origin = web_sys::window().unwrap().location().origin().unwrap();
-    format!("{}{}", origin, relative_url).into()
-
-}
-
-pub async fn add_task(contents: String) -> reqwest::Result<Task> {
-    reqwest::Client::new()
-        .post(set_origin("/api/tasks"))
-        .json(&contents)
-        .send().await?
-        .json().await
-}
-pub async fn get_all_tasks() -> reqwest::Result<Vec<Task>> {
-    reqwest::Client::new()
-        .get(set_origin("/api/tasks"))
-        .send().await?
-        .json().await
-}
-pub async fn get_current_user() -> reqwest::Result<CurrentUserResponse> {
-    reqwest::get(set_origin("/api/user")).await?
-        .json().await
-}
-pub async fn request_login(creds: Credentials) -> reqwest::Result<CurrentUserResponse> {
-    reqwest::Client::new()
-        .post(set_origin("/api/login"))
-        .json(&creds)
-        .send().await?
-        .json().await
-}
-pub async fn request_register(creds: Credentials) -> reqwest::Result<CurrentUserResponse> {
-    reqwest::Client::new()
-        .post(set_origin("/api/register"))
-        .json(&creds)
-        .send().await?
-        .json().await
-}
 
 #[component]
 fn App() -> Html {
@@ -181,6 +119,7 @@ fn App() -> Html {
         })
     };
     {
+        // this is really hacky
         let user_changed = user_changed.clone();
         use_state(|| {
             spawn_local(async move {

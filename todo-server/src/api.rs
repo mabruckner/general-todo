@@ -85,5 +85,7 @@ async fn get_all_tasks(user: HasUser, database: &TodoData) -> Result<Json<Vec<Ta
 
 #[post("/tasks", data="<task_contents>")]
 async fn add_task(user: HasUser, database: &TodoData, task_contents: Json<String>) -> Result<Json<Task>, ()> {
-    Ok(Json(database.add_task(user.0.id, task_contents.0.clone()).await.map_err(|_|())?.into()))
+    let res = database.add_task(user.0.id, task_contents.0.clone()).await;
+    println!("{:?}", res);
+    Ok(Json(res.map_err(|_|())?.into()))
 }
