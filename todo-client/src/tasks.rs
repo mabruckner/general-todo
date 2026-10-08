@@ -1,7 +1,7 @@
 use todo_shared::Task;
 use yew::{platform::{pinned::oneshot, spawn_local}, prelude::*};
 
-use crate::{requests::{add_task, get_all_tasks, remove_task}, util::textinput_callback};
+use crate::{requests::{add_task, get_all_tasks, remove_task, update_task}, util::{textinput_callback, textinput_value_from_event}};
 
 #[derive(Properties, PartialEq)]
 pub struct TaskChangeProps {
@@ -63,11 +63,60 @@ pub fn TaskEntry(props: &TaskEntryProps) -> Html {
             });
         })
     };
+    let update = {
+        let task_changed = props.task_changed.clone();
+        Callback::from(move |task: Task|{
+            let task_changed = task_changed.clone();
+            spawn_local(async move {
+                let res = update_task(task).await;
+                if let Ok(task) = res {
+                    task_changed.emit(());
+                }
+            });
+        })
+    };
+    let on_toggle = {
+        let toggled_task = Task {
+            id: props.id,
+            contents: props.contents.clone(),
+            completed: !props.completed
+        };
+        let update = update.clone();
+        Callback::from(move|_| {
+            update.emit(toggled_task.clone());
+        })
+    };
+    let on_text_change = {
+        let update = update.clone();
+        let base_task = Task {
+            id: props.id,
+            contents: props.contents.clone(),
+            completed: props.completed
+        };
+        Callback::from(move|e:Event| {
+            let value = textinput_value_from_event(e);
+            let task = Task {
+                contents: value,
+                .. base_task.clone()
+            };
+            update.emit(task);
+        })
+    };
     html! {
         <div class="card">
             <div class="card-body">
-                { &props.contents }
-                <button type="button" class="btn-close" onclick={on_delete}></button>
+                <div class="row mb-3">
+                    <div class="col-auto">
+                        <input type="checkbox" class="form-check-input" onchange={on_toggle} checked={props.completed}/>
+                    </div>
+                    <div class="col-auto">
+                        <input type="text" class="form-control" onchange={ on_text_change } value={ props.contents.clone() }/>
+                    </div>
+                    
+                    <div class="col-auto">
+                        <button type="button" class="btn-close" onclick={on_delete}></button>
+                    </div>
+                </div>
             </div>
         </div>
     }
@@ -105,6 +154,12 @@ pub fn TaskView() -> Html {
                 }
             });
         })
+    };
+    {
+        let task_changed = task_changed.clone();
+        use_state(|| {
+            task_changed.emit(());
+        });
     };
     html! {
         <div class="container-md">

@@ -98,7 +98,7 @@ impl TodoData {
     }
 
     pub async fn get_all_tasks(&self, uid: i32) -> Result<Vec<Task>, sqlx::Error> {
-        sqlx::query_as("SELECT * FROM tasks WHERE user_id = $1")
+        sqlx::query_as("SELECT * FROM tasks WHERE user_id = $1 ORDER BY id")
             .bind(uid)
             .fetch_all(&self.0).await
     }
